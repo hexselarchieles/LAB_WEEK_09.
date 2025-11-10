@@ -17,6 +17,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
+import com.example.lab_week_09.ui.theme.OnBackgroundTitleText
+import com.example.lab_week_09.ui.theme.PrimaryTextButton
+import com.example.lab_week_09.ui.theme.OnBackgroundItemText
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -87,8 +91,10 @@ fun HomeContent(
                     .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Enter Item")
+                // 🧩 Use themed title text
+                OnBackgroundTitleText(text = stringResource(id = R.string.enter_item))
 
+                // 🧩 Text field for user input
                 TextField(
                     value = inputField.name,
                     onValueChange = { onInputValueChange(it) },
@@ -97,13 +103,16 @@ fun HomeContent(
                     )
                 )
 
-                Button(onClick = onButtonClick) {
-                    Text(text = "Click Me")
+                // 🧩 Themed button
+                PrimaryTextButton(
+                    text = stringResource(id = R.string.button_click)
+                ) {
+                    onButtonClick()
                 }
             }
         }
 
-        // RecyclerView equivalent
+        // 🧩 Display list items
         items(listData) { item ->
             Column(
                 modifier = Modifier
@@ -111,7 +120,7 @@ fun HomeContent(
                     .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = item.name)
+                OnBackgroundItemText(text = item.name)
             }
         }
     }
