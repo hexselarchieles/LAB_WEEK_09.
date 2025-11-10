@@ -16,11 +16,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
-import com.example.lab_week_09.ui.theme.OnBackgroundTitleText
-import com.example.lab_week_09.ui.theme.PrimaryTextButton
-import com.example.lab_week_09.ui.theme.OnBackgroundItemText
-
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
+import com.example.lab_week_09.ui.theme.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,22 +34,46 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Home()
+                    val navController = rememberNavController()
+                    App(navController = navController)
                 }
             }
         }
     }
 }
 
-// 🧩 Data Model
-data class Student(
-    var name: String
-)
-
-// 🧩 Parent Composable – controls state
+// 🧭 Root Composable with Navigation
 @Composable
-fun Home() {
-    // A mutable list that remembers its state
+fun App(navController: NavHostController) {
+    NavHost(
+        navController = navController,
+        startDestination = "home"
+    ) {
+        // 🏠 Home route
+        composable("home") {
+            Home { listData ->
+                navController.navigate("resultContent/?listData=$listData")
+            }
+        }
+
+        // 📋 Result route
+        composable(
+            "resultContent/?listData={listData}",
+            arguments = listOf(navArgument("listData") { type = NavType.StringType })
+        ) {
+            ResultContent(
+                listData = it.arguments?.getString("listData").orEmpty()
+            )
+        }
+    }
+}
+
+// 📦 Data Model
+data class Student(var name: String)
+
+// 🏠 Home Screen
+@Composable
+fun Home(navigateFromHomeToResult: (String) -> Unit) {
     val listData = remember {
         mutableStateListOf(
             Student("Tanu"),
@@ -56,32 +82,34 @@ fun Home() {
         )
     }
 
-    // A mutable single state for the input field
-    var inputField = remember { mutableStateOf(Student("")) }
+    var inputField by remember { mutableStateOf(Student("")) }
 
-    // Pass data and event handlers to child composable
     HomeContent(
         listData = listData,
-        inputField = inputField.value,
+        inputField = inputField,
         onInputValueChange = { input ->
-            inputField.value = inputField.value.copy(name = input)
+            inputField = inputField.copy(name = input)
         },
         onButtonClick = {
-            if (inputField.value.name.isNotBlank()) {
-                listData.add(inputField.value)
-                inputField.value = Student("")
+            if (inputField.name.isNotBlank()) {
+                listData.add(inputField)
+                inputField = Student("")
             }
+        },
+        navigateFromHomeToResult = {
+            navigateFromHomeToResult(listData.toList().toString())
         }
     )
 }
 
-// 🧩 Child Composable – renders UI
+// 💡 Home Content (UI)
 @Composable
 fun HomeContent(
     listData: SnapshotStateList<Student>,
     inputField: Student,
     onInputValueChange: (String) -> Unit,
-    onButtonClick: () -> Unit
+    onButtonClick: () -> Unit,
+    navigateFromHomeToResult: () -> Unit
 ) {
     LazyColumn {
         item {
@@ -91,28 +119,30 @@ fun HomeContent(
                     .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 🧩 Use themed title text
                 OnBackgroundTitleText(text = stringResource(id = R.string.enter_item))
 
-                // 🧩 Text field for user input
                 TextField(
                     value = inputField.name,
                     onValueChange = { onInputValueChange(it) },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text
-                    )
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
                 )
 
-                // 🧩 Themed button
-                PrimaryTextButton(
-                    text = stringResource(id = R.string.button_click)
-                ) {
-                    onButtonClick()
+                Row {
+                    PrimaryTextButton(
+                        text = stringResource(id = R.string.button_click)
+                    ) {
+                        onButtonClick()
+                    }
+
+                    PrimaryTextButton(
+                        text = stringResource(id = R.string.button_navigate)
+                    ) {
+                        navigateFromHomeToResult()
+                    }
                 }
             }
         }
 
-        // 🧩 Display list items
         items(listData) { item ->
             Column(
                 modifier = Modifier
@@ -126,10 +156,23 @@ fun HomeContent(
     }
 }
 
+// 📄 Result Screen
+@Composable
+fun ResultContent(listData: String) {
+    Column(
+        modifier = Modifier
+            .padding(vertical = 4.dp)
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        OnBackgroundItemText(text = listData)
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewHome() {
     LAB_WEEK_09Theme {
-        Home()
+        Home { }
     }
 }
