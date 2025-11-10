@@ -5,11 +5,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -21,22 +24,61 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             LAB_WEEK_09Theme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // Here we pass a list to the Home composable
-                    val list = listOf("Tanu", "Tina", "Tono")
-                    Home(list)
+                    Home()
                 }
             }
         }
     }
 }
 
+// 🧩 Data Model
+data class Student(
+    var name: String
+)
+
+// 🧩 Parent Composable – controls state
 @Composable
-fun Home(items: List<String>) {
+fun Home() {
+    // A mutable list that remembers its state
+    val listData = remember {
+        mutableStateListOf(
+            Student("Tanu"),
+            Student("Tina"),
+            Student("Tono")
+        )
+    }
+
+    // A mutable single state for the input field
+    var inputField = remember { mutableStateOf(Student("")) }
+
+    // Pass data and event handlers to child composable
+    HomeContent(
+        listData = listData,
+        inputField = inputField.value,
+        onInputValueChange = { input ->
+            inputField.value = inputField.value.copy(name = input)
+        },
+        onButtonClick = {
+            if (inputField.value.name.isNotBlank()) {
+                listData.add(inputField.value)
+                inputField.value = Student("")
+            }
+        }
+    )
+}
+
+// 🧩 Child Composable – renders UI
+@Composable
+fun HomeContent(
+    listData: SnapshotStateList<Student>,
+    inputField: Student,
+    onInputValueChange: (String) -> Unit,
+    onButtonClick: () -> Unit
+) {
     LazyColumn {
         item {
             Column(
@@ -48,27 +90,28 @@ fun Home(items: List<String>) {
                 Text(text = "Enter Item")
 
                 TextField(
-                    value = "",
-                    onValueChange = {},
+                    value = inputField.name,
+                    onValueChange = { onInputValueChange(it) },
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number
+                        keyboardType = KeyboardType.Text
                     )
                 )
 
-                Button(onClick = { }) {
+                Button(onClick = onButtonClick) {
                     Text(text = "Click Me")
                 }
             }
         }
 
-        items(items.size) { index ->
+        // RecyclerView equivalent
+        items(listData) { item ->
             Column(
                 modifier = Modifier
                     .padding(vertical = 4.dp)
                     .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = items[index])
+                Text(text = item.name)
             }
         }
     }
@@ -78,6 +121,6 @@ fun Home(items: List<String>) {
 @Composable
 fun PreviewHome() {
     LAB_WEEK_09Theme {
-        Home(listOf("Tanu", "Tina", "Tono"))
+        Home()
     }
 }
